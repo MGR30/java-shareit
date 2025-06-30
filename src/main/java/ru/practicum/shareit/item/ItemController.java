@@ -3,7 +3,9 @@ package ru.practicum.shareit.item;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemResponseDto;
 import ru.practicum.shareit.item.model.Item;
 
 import java.nio.file.AccessDeniedException;
@@ -32,17 +34,18 @@ public class ItemController {
         return itemMapper.toDto(item);
     }
 
-    @GetMapping("/{itemId}")
-    public ItemDto getItem(@PathVariable Long itemId) {
-        Item item = itemService.getItem(itemId);
-        return itemMapper.toDto(item);
+    @GetMapping
+    public List<ItemResponseDto> getAllItemsByOwner(
+            @RequestHeader("X-Sharer-User-Id") Long ownerId) {
+        return itemService.getAllItemsByOwner(ownerId).stream()
+                .map(itemMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
-    @GetMapping
-    public List<ItemDto> getAllItemsByOwner(@RequestHeader("X-Sharer-User-Id") Long ownerId) {
-        return itemService.getAllItemsByOwner(ownerId).stream()
-                .map(itemMapper::toDto)
-                .collect(Collectors.toList());
+    @GetMapping("/{itemId}")
+    public ItemResponseDto getItem(@PathVariable Long itemId) {
+        Item item = itemService.getItem(itemId);
+        return itemMapper.toResponseDto(item);
     }
 
     @GetMapping("/search")
@@ -50,5 +53,13 @@ public class ItemController {
         return itemService.searchItems(text).stream()
                 .map(itemMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto addComment(
+            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @PathVariable Long itemId,
+            @RequestBody CommentDto commentDto) {
+        return itemService.addComment(userId, itemId, commentDto);
     }
 }
